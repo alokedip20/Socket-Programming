@@ -24,7 +24,7 @@
 		<ol>
 			<li>cd ~/Downloads</li>
 			<li> tar xvfz sqlite-autoconf-3170000.tar.gz</li>
-			<li>cd sqlite-autoconf-3070000</li>
+			<li>cd sqlite-autoconf-3170000</li>
 			<li>./configure --prefix=/usr/local</li>
 			<li>sudo make</li>
 			<li>sudo make install</li>
