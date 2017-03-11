@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	*/
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);     // htons convert the 2 byte integer to network byte order
-	server_addr.sin_addr.s_addr = inet_addr("A.B.C.D");
+	server_addr.sin_addr.s_addr = inet_addr("Server IPv4 Address");
 	if((bind_flag = bind(old_socket,(struct sockaddr *)&server_addr,sizeof(server_addr))) < 0){
 		error("Binding error");
 	}
@@ -133,6 +133,9 @@ void *handler(void * sock){
 	int client_sock = *(int*)sock;
 	int *temp_sock = new int[1];
 	*temp_sock = client_sock;
+	if(n = write(client_sock,"Enter your username : ",23) > 0){
+		cout<<" Server successfully asks for Username "<<endl;
+	}
 	if(pthread_create((pthread_t *)&read_thread,NULL,handler_read,(void *)temp_sock) < 0){
 		cout<<"Can not create thread for reading , Drop connection"<<endl;
 	}
@@ -282,7 +285,7 @@ void *handler_write(void *sock){
 				}
 				//close(client_sock);	
 			}
-			cout<<" Waiting for closing the connection for ......... "<<name<<endl;
+			cout<<" Waiting to close the connectio ....... "<<name<<endl;
 			K++;                       
 		}
 		else{
