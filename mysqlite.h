@@ -196,7 +196,7 @@ int count_active_users(void){
       	if(db == SQLITE_OK){
       	}
       	else{
-        	   cout<<error<<endl;
+        	cout<<error<<endl;
       	}
    	}
    	else{
