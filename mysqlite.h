@@ -191,13 +191,13 @@ int count_active_users(void){
    	char *error = 0;
    	db = sqlite3_open(DATABASE_NAME.c_str(),&database_object);
    	if(db == SQLITE_OK){
-    	string sql_query = "SELECT COUNT(*) FROM "+TABLE_NAME+" WHERE STATUS = 1;";
-      	db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),count_callback,(void *)&count,&error);
-      	if(db == SQLITE_OK){
-      	}
-      	else{
-        	cout<<error<<endl;
-      	}
+    		string sql_query = "SELECT COUNT(*) FROM "+TABLE_NAME+" WHERE STATUS = 1;";
+      		db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),count_callback,(void *)&count,&error);
+      		if(db == SQLITE_OK){
+      		}
+      		else{
+        		cout<<error<<endl;
+      		}
    	}
    	else{
          sqlite3_errmsg(database_object);
