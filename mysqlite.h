@@ -8,7 +8,7 @@ extern struct user_data
 typedef struct user_data record;
 void create_table(string table_name);
 void create_database(string database_name);
-void insert(string user_name,string data,int state,int id);
+void insert(string user_name,string data,int state,int id,string pas);
 void update(string user_name,string data,string stat);
 int count_active_users(void);
 void clean_result(void);
