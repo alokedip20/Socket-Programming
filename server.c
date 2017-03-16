@@ -27,7 +27,7 @@ using namespace std;			// mysqlite.h uses <std::string>
 void error(string msg);
 void validation(int argc);
 bool contain_ter(char data[]);
-void parse_message(char data[],int client_sock,char nmae[]);
+void parse_message(char data[],int client_sock,char nmae[],string *from);
 void message(string *parse,char data[]);
 string sanitization(string data);
 string user_refine(string data);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	*/
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);     // htons convert the 2 byte integer to network byte order
-	server_addr.sin_addr.s_addr = inet_addr("Server IPv4 Address");
+	server_addr.sin_addr.s_addr = inet_addr("10.2.0.1");
 	if((bind_flag = bind(old_socket,(struct sockaddr *)&server_addr,sizeof(server_addr))) < 0){
 		error("Binding error");
 	}
@@ -160,6 +160,7 @@ void *handler_read(void *sock){
 	int flag = -999;
 	record pass;
 	int waiting_time = 1;
+	string from="";
 	while(1){
 		if((n = read(client_sock,data,255)) < 0){
 			error("Error reading client socket");
@@ -214,7 +215,7 @@ void *handler_read(void *sock){
 						srand(time(NULL));
 						int pin = rand()%1000;
 						temp << pin;
-						insert(d,"Welcome to Alokedip Chat System",1,client_sock,temp.str());
+						insert(d,"Welcome to Alokedip Chat System",1,client_sock,temp.str(),"");
 						cout<<" PIN : "<<temp.str()<<endl;
 						strcat(ACK_MSG,(temp.str()).c_str());
 						insert_flag++;
@@ -243,14 +244,15 @@ void *handler_read(void *sock){
 				parse[1] = sanitization(parse[1]);
 				parse[0] = user_refine(parse[0]);
 				sleep(1);					// To avoid "database lock" error 
-				cout<<" -------- Sleep For "<<client_sock<<" is ------ "<<waiting_time<<endl;
 				/*
 					** update(user_name,data) ->update the database
 				*/
 				while(true){
-					flag = retrieve_status(parse[0]);						
+					flag = retrieve_status(parse[0]);
+					from = retrieve(client_sock).username;
+					cout<<" Message has come from --->"<<from<<endl;						
 					if( flag == 1){
-						update(parse[0],parse[1]);
+						update(parse[0],parse[1],from);
 						break;
 					}
 					else if(flag  == 0){
@@ -278,6 +280,8 @@ void *handler_write(void *sock){
 	unsigned long int K = 0;
 	char data[255];
 	char name[20];
+	string from="";
+	string MSG="";
 	char prev_data[256];
 	bzero(prev_data,256);
 	char logout[] = "You have successfully logged out\0";
@@ -286,10 +290,10 @@ void *handler_write(void *sock){
 		/*
 			** parse_message(data[],socketfd) -> retrieve data from the DB corresponding to userID ->socketfd
 		*/
-		parse_message(data,client_sock,name);
+		parse_message(data,client_sock,name,&from);
 		if(data[0] == '\0'){
 			if(K >= TIME_LIMIT){
-				update(name,"","0");
+				update(name,"","Anonymous","0");
 				srand(time(NULL));
 				if(socket_update(name,"0",rand()%1000)){
 					write(client_sock,logout,strlen(logout));
@@ -305,8 +309,12 @@ void *handler_write(void *sock){
 		}
 		else{
 			K = TIME_LIMIT - 3;
+			cout<<" SOURCE : "<<from<<endl;
+			//from = (from == "")?" Server":from;
 			if(strncmp(data,prev_data,strlen(data))){
-				if((n = write(client_sock,data,255)) < 0){
+				MSG = "From : "+from+" ->";
+				strcat((char *)MSG.c_str(),data);
+				if((n = write(client_sock,MSG.c_str(),255)) < 0){
 					error("Error writing client socket");
 				}
 				else{
@@ -346,13 +354,14 @@ void message(string *parse,char buf[]){
 	}
 	parse[k] = msg;
 }
-void parse_message(char data[],int client_sock,char name[]){
+void parse_message(char data[],int client_sock,char name[],string *From){
 	record R;
 	string msg="";
 	string nm;
 	R = retrieve(client_sock);
 	msg = R.message;
 	nm = R.username;
+	*From = R.from;
 	strcpy(data,msg.c_str());
 	strncpy(name,nm.c_str(),strlen(nm.c_str()));
 	return;
