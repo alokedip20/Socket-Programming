@@ -2,14 +2,14 @@
 #define mysqlite_h_
 extern struct user_data
 {  
-   string username,message,status,pin;
+   string username,message,status,pin,from;
    int id;
 }dummy;
 typedef struct user_data record;
 void create_table(string table_name);
 void create_database(string database_name);
-void insert(string user_name,string data,int state,int id,string pass);
-void update(string user_name,string data,string stat);
+void insert(string user_name,string data,int state,int id,string pass,string from);
+void update(string user_name,string data,string from,string stat);
 int count_active_users(void);
 void clean_result(void);
 int retrieve_status(string user_name);
@@ -33,6 +33,7 @@ static int call_back(void *data,int argc,char *argv[],char **azColName){
    result.pin = argv[2];
    result.message = argv[3];
    result.status = argv[4];
+   result.from = argv[5];
    return 0;
 }
 static int call_back_status(void *data,int argc,char *argv[],char **azColName){
@@ -69,7 +70,8 @@ void create_table(string table_name){
          "USERNAME           TEXT    NOT NULL," \
          "PASSWORD           TEXT    NOT NULL," \
          "DATA           CHAR(256)    NOT NULL," \
-         "STATUS        INT      NOT NULL);";
+         "STATUS        INT      NOT NULL,"\
+         "SOURCE           TEXT    NOT NULL);";
       db = sqlite3_exec(database_object,(const char *)(sql_query.c_str()),call_back,0,&error);
       if(db == SQLITE_OK){
          /*
@@ -85,7 +87,7 @@ void create_table(string table_name){
    }
    sqlite3_close(database_object);
 }
-void insert(string user_name,string data,int state,int id,string pas){
+void insert(string user_name,string data,int state,int id,string pas,string from){
    int db;
    A = user_name;
    sqlite3 *database_object=NULL;
@@ -98,8 +100,8 @@ void insert(string user_name,string data,int state,int id,string pas){
       temp2 << id;
       s2 = temp2.str();
       s = temp.str();
-      string sql_query = "INSERT INTO "+TABLE_NAME +"(ID,USERNAME,PASSWORD,DATA,STATUS)" \
-                           " VALUES ("+s2+","+"'"+A+"'"+","+"'"+pas+"',"+"'"+data+"'"+","+"'"+s+"'"+");";
+      string sql_query = "INSERT INTO "+TABLE_NAME +"(ID,USERNAME,PASSWORD,DATA,STATUS,SOURCE)" \
+                           " VALUES ("+s2+","+"'"+A+"'"+","+"'"+pas+"',"+"'"+data+"'"+","+"'"+s+"'"+","+"'"+from+"'"+");";
       db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),call_back, 0,&error);
       if(db == SQLITE_OK){
          /*
@@ -116,13 +118,13 @@ void insert(string user_name,string data,int state,int id,string pas){
    }
    sqlite3_close(database_object);
 }
-void update(string user_name,string data,string stat = "1"){
+void update(string user_name,string data,string from,string stat = "1"){
    int db;
    sqlite3 *database_object=NULL;
    char *error = 0;
    db = sqlite3_open(DATABASE_NAME.c_str(),&database_object);
    if(db == SQLITE_OK){
-      string sql_query = "UPDATE "+TABLE_NAME+" SET DATA"+" = "+"'"+data+"', STATUS = "+stat+" WHERE USERNAME = "+"'"+user_name+"'"+";";
+      string sql_query = "UPDATE "+TABLE_NAME+" SET DATA"+" = "+"'"+data+"', STATUS = "+stat+", SOURCE = "+"'"+from+"' WHERE USERNAME = "+"'"+user_name+"'"+";";
       db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),call_back,0,&error);
       if(db == SQLITE_OK){
       }
