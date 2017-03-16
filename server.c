@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	*/
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);     // htons convert the 2 byte integer to network byte order
-	server_addr.sin_addr.s_addr = inet_addr("Server IPv4 Address");
+	server_addr.sin_addr.s_addr = inet_addr("10.31.6.60");
 	if((bind_flag = bind(old_socket,(struct sockaddr *)&server_addr,sizeof(server_addr))) < 0){
 		error("Binding error");
 	}
@@ -154,10 +154,12 @@ void *handler_read(void *sock){
 	string parse[2];
 	char ACK_MSG[] = "You have successfully registered in server You can type Messege. Your Pin => \0";
 	char NOT_ACTIVE[] = "USER is not active so can not send MEssege.\0";
+	char NOT_REG[] = "User is not registered\0";
 	char special_query[] = "finger\0";
 	string frame="";
 	int flag = -999;
 	record pass;
+	int waiting_time = 1;
 	while(1){
 		if((n = read(client_sock,data,255)) < 0){
 			error("Error reading client socket");
@@ -185,7 +187,6 @@ void *handler_read(void *sock){
 				{
 					frame +="\t\t Username => "+ALL[i].username+"\n";
 				}
-				//cout<<frame<<endl;
 				write(client_sock,frame.c_str(),strlen(frame.c_str()));
 				frame = "";				
 			}
@@ -217,6 +218,7 @@ void *handler_read(void *sock){
 						cout<<" PIN : "<<temp.str()<<endl;
 						strcat(ACK_MSG,(temp.str()).c_str());
 						insert_flag++;
+						write(client_sock,ACK_MSG,strlen(ACK_MSG));
 					}
 					else{
 						record cred = retrieve(client_sock);
@@ -229,7 +231,6 @@ void *handler_read(void *sock){
 							write(client_sock,"Wrong password :( ",19);
 						}
 					}
-					write(client_sock,ACK_MSG,strlen(ACK_MSG));
 				}
 				bzero(d,256);
 			}
@@ -242,16 +243,30 @@ void *handler_read(void *sock){
 				parse[1] = sanitization(parse[1]);
 				parse[0] = user_refine(parse[0]);
 				sleep(1);					// To avoid "database lock" error 
+				cout<<" -------- Sleep For "<<client_sock<<" is ------ "<<waiting_time<<endl;
 				/*
 					** update(user_name,data) ->update the database
 				*/
-				flag = retrieve_status(parse[0]);						
-				if( flag == 1){
-					update(parse[0],parse[1]);
+				while(true){
+					flag = retrieve_status(parse[0]);						
+					if( flag == 1){
+						update(parse[0],parse[1]);
+						break;
+					}
+					else if(flag  == 0){
+						write(client_sock,NOT_ACTIVE,strlen(NOT_ACTIVE));   // error while attempting to send by multiple user
+						break;
+					}
+					else if(flag == -1){
+						write(client_sock,NOT_REG,strlen(NOT_REG));
+						break;
+					}
+					else if(flag == -2){
+						cout<<"DATABASE is locked.. Retrying.........."<<endl;
+						sleep(waiting_time++);
+					}
 				}
-				else if(flag  == 0 || flag == -1 ){
-					write(client_sock,NOT_ACTIVE,strlen(NOT_ACTIVE));
-				}
+				waiting_time = 1;
 			}
 			bzero(data,256);		// clean the buffer
 		}
@@ -285,7 +300,7 @@ void *handler_write(void *sock){
 				}
 				//close(client_sock);	
 			}
-			cout<<" Waiting to close the connectio ....... "<<name<<endl;
+			cout<<" Waiting to close the connection ....... "<<name<<endl;
 			K++;                       
 		}
 		else{
