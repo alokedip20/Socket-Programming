@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	*/
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);     // htons convert the 2 byte integer to network byte order
-	server_addr.sin_addr.s_addr = inet_addr("10.31.6.60");
+	server_addr.sin_addr.s_addr = inet_addr("Server IPv4 Address");
 	if((bind_flag = bind(old_socket,(struct sockaddr *)&server_addr,sizeof(server_addr))) < 0){
 		error("Binding error");
 	}
