@@ -8,7 +8,7 @@ extern struct user_data
 typedef struct user_data record;
 void create_table(string table_name);
 void create_database(string database_name);
-void insert(string user_name,string data,int state,int id,string pas);
+void insert(string user_name,string data,int state,int id,string pass);
 void update(string user_name,string data,string stat);
 int count_active_users(void);
 void clean_result(void);
@@ -77,7 +77,7 @@ void create_table(string table_name){
          */
       }
       else{
-         cout<<error<<endl;
+         cout<<"Create table : "<<error<<endl;
       }
    }
    else{
@@ -107,7 +107,7 @@ void insert(string user_name,string data,int state,int id,string pas){
          */
       }
       else{
-         cout<<error<<endl;
+         cout<<"insert : "<<error<<endl;
          exit(0);
       }
    }
@@ -191,13 +191,13 @@ int count_active_users(void){
    	char *error = 0;
    	db = sqlite3_open(DATABASE_NAME.c_str(),&database_object);
    	if(db == SQLITE_OK){
-    		string sql_query = "SELECT COUNT(*) FROM "+TABLE_NAME+" WHERE STATUS = 1;";
-      		db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),count_callback,(void *)&count,&error);
-      		if(db == SQLITE_OK){
-      		}
-      		else{
-        		cout<<error<<endl;
-      		}
+    	string sql_query = "SELECT COUNT(*) FROM "+TABLE_NAME+" WHERE STATUS = 1;";
+      	db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),count_callback,(void *)&count,&error);
+      	if(db == SQLITE_OK){
+      	}
+      	else{
+        	   cout<<"Error in COunt active user "<<error<<endl;
+      	}
    	}
    	else{
          sqlite3_errmsg(database_object);
@@ -222,7 +222,8 @@ int retrieve_status(string user_name){
       if(db == SQLITE_OK){
       }
       else{
-         cout<<"Error in retrieve "<<error<<endl;
+         cout<<"Error in retrieve_status "<<error<<endl;
+         return -2;
       }
    }
    else{
@@ -253,7 +254,7 @@ record* retrieve_active_user(void){
       if(db == SQLITE_OK){
       }
       else{
-         cout<<"Error in retrieve "<<error<<endl;
+         cout<<"Error in retrieve active users "<<error<<endl;
       }
    }
    else{
