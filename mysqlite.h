@@ -123,8 +123,14 @@ void update(string user_name,string data,string from,string stat = "1"){
    sqlite3 *database_object=NULL;
    char *error = 0;
    db = sqlite3_open(DATABASE_NAME.c_str(),&database_object);
+   string sql_query;
    if(db == SQLITE_OK){
-      string sql_query = "UPDATE "+TABLE_NAME+" SET DATA"+" = "+"'"+data+"', STATUS = "+stat+", SOURCE = "+"'"+from+"' WHERE USERNAME = "+"'"+user_name+"'"+";";
+      if(data != ""){
+         sql_query = "UPDATE "+TABLE_NAME+" SET DATA"+" = "+"'"+data+"', STATUS = "+stat+", SOURCE = "+"'"+from+"' WHERE USERNAME = "+"'"+user_name+"'"+";";
+      }
+      else{
+         sql_query = "UPDATE "+TABLE_NAME+" SET STATUS = "+stat+" WHERE USERNAME = "+"'"+user_name+"'"+";";
+      }
       db = sqlite3_exec(database_object,(const char *)sql_query.c_str(),call_back,0,&error);
       if(db == SQLITE_OK){
       }
