@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	*/
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);     // htons convert the 2 byte integer to network byte order
-	server_addr.sin_addr.s_addr = inet_addr("10.2.0.1");
+	server_addr.sin_addr.s_addr = inet_addr("10.31.6.60");
 	if((bind_flag = bind(old_socket,(struct sockaddr *)&server_addr,sizeof(server_addr))) < 0){
 		error("Binding error");
 	}
@@ -161,6 +161,8 @@ void *handler_read(void *sock){
 	record pass;
 	int waiting_time = 1;
 	string from="";
+	bool logout_flag = false;
+	char logout[] = "You have successfully logged out\0";
 	while(1){
 		if((n = read(client_sock,data,255)) < 0){
 			error("Error reading client socket");
@@ -252,11 +254,20 @@ void *handler_read(void *sock){
 					from = retrieve(client_sock).username;
 					cout<<" Message has come from --->"<<from<<endl;						
 					if( flag == 1){
-						update(parse[0],parse[1],from);
+						if(parse[1] != ""){
+							update(parse[0],parse[1],from);
+						}
+						else{
+							logout_flag = true;
+							write(client_sock,logout,strlen(logout));
+							srand(time(NULL));
+							while(!socket_update(parse[0],"0",rand()%1000));
+						}
 						break;
 					}
 					else if(flag  == 0){
 						write(client_sock,NOT_ACTIVE,strlen(NOT_ACTIVE));   // error while attempting to send by multiple user
+						update(parse[0],parse[1],from,"0");
 						break;
 					}
 					else if(flag == -1){
@@ -269,6 +280,10 @@ void *handler_read(void *sock){
 					}
 				}
 				waiting_time = 1;
+			}
+			if(logout_flag){
+				cout<<" Server disconnect "<<endl;
+				break;
 			}
 			bzero(data,256);		// clean the buffer
 		}
@@ -284,7 +299,6 @@ void *handler_write(void *sock){
 	string MSG="";
 	char prev_data[256];
 	bzero(prev_data,256);
-	char logout[] = "You have successfully logged out\0";
 	while(1){
 		sleep(1);
 		/*
@@ -293,16 +307,16 @@ void *handler_write(void *sock){
 		parse_message(data,client_sock,name,&from);
 		if(data[0] == '\0'){
 			if(K >= TIME_LIMIT){
-				update(name,"","Anonymous","0");
-				srand(time(NULL));
-				if(socket_update(name,"0",rand()%1000)){
-					write(client_sock,logout,strlen(logout));
+				//update(name,"","Anonymous","0");
+				/*if(socket_update(name,"0",rand()%1000)){
+					//write(client_sock,logout,strlen(logout));
 					break;
 				}
 				else{
 					K = TIME_LIMIT - 1;
-				}
-				//close(client_sock);	
+				}*/
+				//close(client_sock);
+				break;	
 			}
 			cout<<" Waiting to close the connection ....... "<<name<<endl;
 			K++;                       
@@ -314,12 +328,14 @@ void *handler_write(void *sock){
 			if(strncmp(data,prev_data,strlen(data))){
 				MSG = "From : "+from+" ->";
 				strcat((char *)MSG.c_str(),data);
-				if((n = write(client_sock,MSG.c_str(),255)) < 0){
-					error("Error writing client socket");
-				}
-				else{
-					cout<<"Data => "<<data<<" Has been written to socket no "<<client_sock<<endl;
-					strncpy(prev_data,data,strlen(data));
+				if(retrieve_status(name)){
+					if((n = write(client_sock,MSG.c_str(),255)) < 0){
+						error("Error writing client socket");
+					}
+					else{
+						cout<<"Data => "<<data<<" Has been written to socket no "<<client_sock<<endl;
+						strncpy(prev_data,data,strlen(data));
+					}
 				}
 			}
 			else{
